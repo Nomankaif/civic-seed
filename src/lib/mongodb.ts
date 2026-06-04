@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "";
-const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || "civicbuild_connect";
+const rawUri = process.env.MONGODB_URI || "";
+const MONGODB_URI = rawUri.replace(/^["']|["']$/g, "").trim();
+
+const rawDbName = process.env.MONGODB_DB_NAME || "civicbuild_connect";
+const MONGODB_DB_NAME = rawDbName.replace(/^["']|["']$/g, "").trim();
+
+// Disable buffering globally so queries fail fast (no 10s hangs) if not connected
+mongoose.set("bufferCommands", false);
 
 if (!MONGODB_URI) {
-  console.warn("WARNING: MONGODB_URI environment variable is not defined. Local mock/in-memory data might be needed if database is offline.");
+  console.warn("WARNING: MONGODB_URI environment variable is not defined. Local mock/in-memory data will be used.");
 }
 
 interface MongooseGlobal {
@@ -29,7 +35,11 @@ export async function connectToDatabase() {
   }
 
   if (!MONGODB_URI || (!MONGODB_URI.startsWith("mongodb://") && !MONGODB_URI.startsWith("mongodb+srv://"))) {
-    console.warn("WARNING: MONGODB_URI is not defined or has an invalid scheme. Skipping database connection. Some pages may load in offline mode.");
+    console.warn(
+      `WARNING: MONGODB_URI is not defined or has an invalid scheme. ` +
+      `URI length: ${MONGODB_URI.length}, Starts with: "${MONGODB_URI.substring(0, 15)}...". ` +
+      `Skipping database connection.`
+    );
     return null;
   }
 
