@@ -28,6 +28,11 @@ export async function connectToDatabase() {
     return cached.conn;
   }
 
+  if (!MONGODB_URI || (!MONGODB_URI.startsWith("mongodb://") && !MONGODB_URI.startsWith("mongodb+srv://"))) {
+    console.warn("WARNING: MONGODB_URI is not defined or has an invalid scheme. Skipping database connection. Some pages may load in offline mode.");
+    return null;
+  }
+
   if (!cached.promise) {
     const opts = {
       dbName: MONGODB_DB_NAME,
