@@ -11,6 +11,8 @@ import { toast } from "sonner";
 export default function SignInPage() {
   const [isClerk, setIsClerk] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [customEmail, setCustomEmail] = useState("");
+  const [customPassword, setCustomPassword] = useState("");
   const router = useRouter();
 
   // Detect if Clerk keys are present
@@ -50,6 +52,51 @@ export default function SignInPage() {
     } catch (err) {
       console.error(err);
       toast.error("An error occurred during mock login.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCustomLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customEmail || !customPassword) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/session", {
+        method: "POST",
+        body: JSON.stringify({ 
+          action: "login", 
+          userId: customEmail, 
+          password: customPassword 
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`Welcome back! Logged in successfully.`);
+        
+        // Wait a small moment to let cookie set, then route
+        setTimeout(() => {
+          if (data.user.role === "CLIENT") {
+            router.push("/dashboard/client");
+          } else if (data.user.role === "CONTRACTOR") {
+            router.push("/dashboard/contractor");
+          } else if (data.user.role === "ADMIN") {
+            router.push("/dashboard/admin");
+          }
+          router.refresh();
+        }, 300);
+      } else {
+        toast.error(data.message || "Invalid credentials.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("An error occurred during login.");
     } finally {
       setLoading(false);
     }
@@ -130,7 +177,51 @@ export default function SignInPage() {
         </Button>
       </div>
 
-      <div className="border-t border-slate-900 my-6 pt-4 text-center">
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-800" />
+        </div>
+        <div className="relative flex justify-center text-[10px] uppercase">
+          <span className="bg-slate-950 px-2 text-slate-400">Or sign in with custom account</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleCustomLogin} className="space-y-3 text-left">
+        <div>
+          <label className="block text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Email Address or User ID</label>
+          <input
+            type="text"
+            required
+            disabled={loading}
+            placeholder="e.g. test@example.com"
+            value={customEmail}
+            onChange={(e) => setCustomEmail(e.target.value)}
+            className="w-full text-sm bg-slate-900 border border-slate-800 text-white rounded-lg p-2.5 focus:border-sky-500 focus:outline-none"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
+          <input
+            type="password"
+            required
+            disabled={loading}
+            placeholder="••••••••"
+            value={customPassword}
+            onChange={(e) => setCustomPassword(e.target.value)}
+            className="w-full text-sm bg-slate-900 border border-slate-800 text-white rounded-lg p-2.5 focus:border-sky-500 focus:outline-none"
+          />
+          <p className="text-[9px] text-slate-500 mt-1">
+            * For pre-seeded accounts, the password is <strong className="text-slate-400">password123</strong>
+          </p>
+        </div>
+
+        <Button type="submit" disabled={loading} className="w-full bg-sky-500 hover:bg-sky-400 text-slate-900 font-bold py-2.5 rounded-lg text-sm">
+          {loading ? "Signing In..." : "Sign In to Custom Account"}
+        </Button>
+      </form>
+
+      <div className="border-t border-slate-900 mt-6 pt-4 text-center">
         <div className="flex items-center justify-center space-x-2 text-[10px] text-amber-500 bg-amber-950/30 border border-amber-900/40 rounded-lg p-3">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Demo Local Session active. No Clerk API keys configured.</span>

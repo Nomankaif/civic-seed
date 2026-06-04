@@ -21,6 +21,7 @@ function SignUpForm() {
     fullName: "",
     email: "",
     role: queryRole,
+    password: "",
   });
 
   // Update form if query params change
@@ -39,8 +40,13 @@ function SignUpForm() {
 
   const handleMockSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || !formData.role) {
-      toast.error("Please fill in all required fields.");
+    if (!formData.fullName || !formData.email || !formData.role || !formData.password) {
+      toast.error("Please fill in all required fields (including password).");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
       return;
     }
 
@@ -53,6 +59,7 @@ function SignUpForm() {
           fullName: formData.fullName,
           email: formData.email,
           role: formData.role,
+          password: formData.password,
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -118,6 +125,19 @@ function SignUpForm() {
             placeholder="name@organization.com"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="w-full text-sm bg-slate-900 border border-slate-800 text-white rounded-lg p-2.5 focus:border-sky-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+          <input
+            type="password"
+            required
+            disabled={loading}
+            placeholder="Minimum 6 characters"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="w-full text-sm bg-slate-900 border border-slate-800 text-white rounded-lg p-2.5 focus:border-sky-500 focus:outline-none"
           />
         </div>

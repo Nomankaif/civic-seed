@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { connectToDatabase } from "../lib/mongodb";
 import User from "../models/User";
+import { hashPassword } from "../lib/auth";
 import Organization from "../models/Organization";
 import ContractorProfile from "../models/ContractorProfile";
 import Project from "../models/Project";
@@ -45,6 +46,7 @@ export async function seedDatabase() {
     email: "client@civicbuild.com",
     fullName: "City Infrastructure Department",
     role: "CLIENT",
+    password: hashPassword("password123"),
     profileImageUrl: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=150",
     onboardingCompleted: true,
   });
@@ -54,6 +56,7 @@ export async function seedDatabase() {
     email: "contractor@civicbuild.com",
     fullName: "Lone Star Surface Repairs",
     role: "CONTRACTOR",
+    password: hashPassword("password123"),
     profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
     onboardingCompleted: true,
   });
@@ -63,6 +66,7 @@ export async function seedDatabase() {
     email: "admin@civicbuild.com",
     fullName: "Platform Administrator",
     role: "ADMIN",
+    password: hashPassword("password123"),
     profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
     onboardingCompleted: true,
   });

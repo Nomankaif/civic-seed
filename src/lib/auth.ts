@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import User from "@/models/User";
 import { connectToDatabase } from "./mongodb";
+
+export function hashPassword(password: string): string {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
 
 const JWT_SECRET = process.env.CLERK_SECRET_KEY || "civicbuild_connect_jwt_secret_fallback";
 

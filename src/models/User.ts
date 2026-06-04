@@ -5,6 +5,7 @@ export interface IUser extends MongooseDocument {
   email: string;
   fullName: string;
   role: "CLIENT" | "CONTRACTOR" | "ADMIN";
+  password?: string; // Optional password for mock logins
   profileImageUrl?: string;
   onboardingCompleted: boolean;
   createdAt: Date;
@@ -17,6 +18,7 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     fullName: { type: String, required: true },
     role: { type: String, enum: ["CLIENT", "CONTRACTOR", "ADMIN"], required: true },
+    password: { type: String }, // Stores hashed password for mock credentials
     profileImageUrl: { type: String },
     onboardingCompleted: { type: Boolean, default: false },
   },

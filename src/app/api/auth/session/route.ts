@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthSession, setMockSession, clearMockSession } from "@/lib/auth";
+import { getAuthSession, setMockSession, clearMockSession, hashPassword } from "@/lib/auth";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
 
@@ -25,10 +25,40 @@ export async function POST(req: Request) {
     }
 
     if (action === "login") {
-      // Find the user
-      const user = await User.findOne({ clerkUserId: userId });
+      const { password } = body;
+      const searchKey = String(userId).trim();
+      
+      // Find the user by clerkUserId or email
+      const user = await User.findOne({
+        $or: [
+          { clerkUserId: searchKey },
+          { email: searchKey },
+          { email: searchKey.toLowerCase() }
+        ]
+      });
       if (!user) {
-        return NextResponse.json({ success: false, message: "Seeded user not found. Did you run the seed script?" }, { status: 404 });
+        return NextResponse.json({ 
+          success: false, 
+          message: "User account not found. If this is a default account, make sure you ran the seed script." 
+        }, { status: 404 });
+      }
+
+      // Check password if it is a custom login (not a mock button one-click bypass)
+      // Buttons bypass if password is not provided and userId starts with "mock_"
+      const isMockButtonBypass = !password && searchKey.startsWith("mock_");
+      if (!isMockButtonBypass) {
+        if (!password) {
+          return NextResponse.json({ success: false, message: "Password is required for this account." }, { status: 400 });
+        }
+        if (!user.password) {
+          // Fallback for seeded accounts without stored passwords
+          const defaultHash = hashPassword("password123");
+          if (hashPassword(password) !== defaultHash) {
+            return NextResponse.json({ success: false, message: "Invalid email/ID or password." }, { status: 401 });
+          }
+        } else if (hashPassword(password) !== user.password) {
+          return NextResponse.json({ success: false, message: "Invalid email/ID or password." }, { status: 401 });
+        }
       }
 
       await setMockSession({
@@ -43,9 +73,9 @@ export async function POST(req: Request) {
 
     // Direct mock signup
     if (action === "signup") {
-      const { email, fullName, role } = body;
-      if (!email || !fullName || !role) {
-        return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
+      const { email, fullName, role, password } = body;
+      if (!email || !fullName || !role || !password) {
+        return NextResponse.json({ success: false, message: "Missing required fields (including password)" }, { status: 400 });
       }
 
       // Check if user already exists
@@ -60,6 +90,7 @@ export async function POST(req: Request) {
         email,
         fullName,
         role,
+        password: hashPassword(password),
         onboardingCompleted: false, // will require onboarding
       });
 
